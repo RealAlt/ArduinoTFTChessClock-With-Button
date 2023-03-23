@@ -157,6 +157,10 @@ int whitesStageMoves = 0;
 int blacksStageMoves = 0;
 GameType currentGame;
 
+int buttonState = 0;
+int lastButtonState = 0;
+const int buttonPin = 12;
+
 const int settingsRows = 6;
 const int settingsCols = 4;
 
@@ -212,6 +216,7 @@ TFTSevenSegmentClockDisplay clockDisplay = clockDisplayMinutes ;
 
 
 
+
 void setup(void) {
   Serial.begin(9600);
   tft.reset();
@@ -221,6 +226,13 @@ void setup(void) {
 }
 
 void loop(void) {
+  buttonState = digitalRead(buttonPin);
+  for (int i = 0; i <= 13; i++) {
+    int pinValue = digitalRead(i);
+    Serial.print("Pin: ");
+    Serial.print(i);
+    Serial.println(pinValue);
+  }
   readUiSelection();
   if (state == WHITE_PLAYING) {
     whiteClockLoop();
@@ -228,7 +240,6 @@ void loop(void) {
     blackClockLoop();
   }
 }
-
 
 
 void whiteClockLoop() {
@@ -576,7 +587,7 @@ uint16_t readUiSelection() {
   pinMode(YP, OUTPUT);
 
 
-  if (tp.z > MINPRESSURE && tp.z < MAXPRESSURE && millis() - lastTimeTouch > 400 ) {
+  if ((tp.z > MINPRESSURE && tp.z < MAXPRESSURE && millis() - lastTimeTouch > 400) || (buttonState != lastButtonState)) {
     // we have some minimum pressure we consider 'valid'
     // pressure of 0 means no pressing!
     //    Serial.println(F("Touch"));
@@ -670,10 +681,10 @@ uint16_t readUiSelection() {
       return state;
     }
 
-    if ((state == WHITE_PLAYING) &&
+    if (((state == WHITE_PLAYING) &&
         (((ypos > PLAYER_CLOCK_HEIGHT) && !isWhiteDown )
-         || (ypos < PLAYER_CLOCK_HEIGHT) && isWhiteDown )) {
-
+         || (ypos < PLAYER_CLOCK_HEIGHT) && isWhiteDown )) || (buttonState != lastButtonState)) {
+      lastButtonState = buttonState;
       ++whitesmoves;
       ++whitesStageMoves;
 
@@ -696,10 +707,10 @@ uint16_t readUiSelection() {
       blacksEllapsedTimeMillis = millis();
       isNewTurn = true;
 
-    } else if ((state == BLACK_PLAYING) &&
+    } else if (((state == BLACK_PLAYING) &&
                (((ypos > PLAYER_CLOCK_HEIGHT) && isWhiteDown )
-                || (ypos < PLAYER_CLOCK_HEIGHT) && !isWhiteDown )) {
-
+                || (ypos < PLAYER_CLOCK_HEIGHT) && !isWhiteDown )) || (buttonState != lastButtonState))  {
+      lastButtonState = buttonState;
       state = WHITE_PLAYING;
       if (currentGame.incrementType == BRONSTEIN) {
         whitesTimeMillis += (currentGame.incrementSeconds * 1000);
